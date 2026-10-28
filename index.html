@@ -174,6 +174,13 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;
 }
 @media (max-width:480px){.choice{grid-template-columns:1fr}.row2{grid-template-columns:1fr}.stage{height:500px}}
 @media (prefers-reduced-motion: reduce){.phone{animation:none}}
+.video-routine .wrap{display:grid;grid-template-columns:1fr 1.05fr;gap:40px;align-items:center}
+.vr-copy{display:flex;flex-direction:column;gap:18px;align-items:flex-start;min-width:0}
+.vr-copy p:not(.eyebrow){color:var(--ink-2);max-width:40ch}
+.phone-b{animation-name:sway-b}
+@keyframes sway-b{0%,100%{transform:translate(-50%,-50%) rotateY(12deg) rotateX(4deg)}50%{transform:translate(-50%,-52%) rotateY(-10deg) rotateX(2deg)}}
+@media (max-width:860px){.video-routine .wrap{grid-template-columns:1fr}}
+@media (prefers-reduced-motion: reduce){.phone-b{animation:none}}
 </style>
 </head>
 <body>
@@ -235,6 +242,24 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;
           <h3>Une peau plus lisse</h3>
           <p>Les fins grains du savon éliminent en douceur les cellules mortes pour une peau plus douce et plus uniforme.</p>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="video-routine" id="video">
+    <div class="wrap">
+      <div class="vr-copy">
+        <p class="eyebrow">La routine en vidéo</p>
+        <h2>Une minute, matin et soir</h2>
+        <p>Faites mousser le savon sur peau humide, massez doucement pendant une minute, puis rincez. Le matin, terminez par un écran solaire.</p>
+        <a class="btn btn-gold" href="#packs">Choisir mon pack</a>
+      </div>
+      <div class="stage" id="stage2" aria-label="Vidéo de la routine Zenda Skin">
+        <div class="ring" id="ring2"></div>
+        <div class="phone phone-b">
+          <video id="vid2" src="zenda-routine.mp4" poster="zenda-routine-poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
+        </div>
+        <button class="sound" id="sound2" type="button" aria-pressed="false">Activer le son</button>
       </div>
     </div>
   </section>
@@ -360,7 +385,7 @@ const PACKS = [
   { id:"decouverte", nom:"Découverte", prix:6000, savons:2, masques:4, desc:"Pour voir les premiers effets", conseil:true,
     items:["2 savons curcuma & acide kojique","4 masques hydratants","Pour une routine régulière"] },
   { id:"cure", nom:"Cure complète", prix:10900, savons:4, masques:8, desc:"Pour un teint uniforme dans la durée",
-    items:["4 savons curcuma & acide kojique","8 masques hydratants","Le meilleur prix par savon"] }
+    items:["4 savons curcuma & acide kojique","8 masques hydratants","Le pack le plus avantageux"] }
 ];
 /* ================================================================ */
 
@@ -374,7 +399,6 @@ $("packsGrid").innerHTML = PACKS.map(p => `
     ${p.conseil?'<span class="badge">Notre conseil</span>':""}
     <div><h3>${p.nom}</h3><p class="unit">${p.desc}</p></div>
     <div class="price">${p.prix.toLocaleString("fr-FR").replace(/ | /g," ")}<small>F CFA</small></div>
-    <p class="unit">Soit ${fmt(Math.round(p.prix/p.savons))} par savon</p>
     <ul>${p.items.map(i=>`<li>${i}</li>`).join("")}${CONFIG.livraisonOfferteSur.includes(p.id)?"<li>Livraison offerte</li>":""}</ul>
     <button class="btn ${p.conseil?"btn-gold":"btn-line"}" type="button" data-pick="${p.id}">Choisir ce pack</button>
   </article>`).join("");
@@ -484,19 +508,24 @@ $("orderForm").addEventListener("submit", async e => {
   showResult(orderText(t), "Votre commande est prête");
 });
 
-/* Son de la vidéo */
-const vid = $("vid"), snd = $("sound");
-snd.onclick = () => {
-  vid.muted = !vid.muted; if(!vid.muted){ vid.currentTime = 0; vid.play().catch(()=>{}); }
-  snd.textContent = vid.muted ? "Activer le son" : "Couper le son";
-  snd.setAttribute("aria-pressed", String(!vid.muted));
-};
+/* Son des vidéos */
+function soundToggle(vidId, btnId, otherId){
+  const vid = $(vidId), snd = $(btnId);
+  snd.onclick = () => {
+    vid.muted = !vid.muted;
+    if(!vid.muted){ vid.currentTime = 0; vid.play().catch(()=>{}); const o=$(otherId); if(o && !o.muted){ o.muted = true; const ob=document.querySelector(`[data-for="${otherId}"]`); if(ob){ob.textContent="Activer le son";ob.setAttribute("aria-pressed","false");} } }
+    snd.textContent = vid.muted ? "Activer le son" : "Couper le son";
+    snd.setAttribute("aria-pressed", String(!vid.muted));
+  };
+  snd.dataset.for = vidId;
+}
+soundToggle("vid","sound","vid2");
+soundToggle("vid2","sound2","vid");
 
-/* Orbite : pastilles qui tournent autour de la vidéo */
-(() => {
-  const stage = $("stage"), ring = $("ring");
-  const labels = [["◆","Curcuma"],["◆","Acide kojique"],["◆","Teint uniforme"],["◆","Éclat naturel"],["◆","Visage & corps"]];
-  const pills = labels.map(([i,l]) => { const d = document.createElement("div"); d.className="pill"; d.innerHTML=`<i>${i}</i>${l}`; stage.appendChild(d); return d; });
+/* Orbite : pastilles qui tournent autour des vidéos */
+function orbit(stageId, ringId, labels, dir){
+  const stage = $(stageId), ring = $(ringId);
+  const pills = labels.map(l => { const d = document.createElement("div"); d.className="pill"; d.innerHTML=`<i>◆</i>${l}`; stage.appendChild(d); return d; });
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let rx = 200, ry = 60;
   function size(){
@@ -506,23 +535,25 @@ snd.onclick = () => {
     ring.style.setProperty("--rw", rx*2+"px"); ring.style.setProperty("--rh", ry*2+"px");
   }
   size(); addEventListener("resize", size);
-  const tilt = -8*Math.PI/180;
+  const tilt = dir*-8*Math.PI/180;
   function frame(ts){
     const t = still ? 0 : ts/1000;
     pills.forEach((p,k) => {
-      const a = t*0.42 + k*(2*Math.PI/pills.length);
+      const a = dir*t*0.42 + k*(2*Math.PI/pills.length);
       const x0 = Math.cos(a)*rx, y0 = Math.sin(a)*ry;
       const x = x0*Math.cos(tilt) - y0*Math.sin(tilt), y = x0*Math.sin(tilt) + y0*Math.cos(tilt);
       const depth = Math.sin(a);              // 1 = devant, -1 = derrière
-      const s = 0.82 + 0.22*(depth+1)/2;
-      p.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)) scale(${s.toFixed(3)})`;
+      const sc = 0.82 + 0.22*(depth+1)/2;
+      p.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)) scale(${sc.toFixed(3)})`;
       p.style.zIndex = depth > 0 ? 7 : 2;
       p.style.opacity = (0.55 + 0.45*(depth+1)/2).toFixed(2);
     });
     if(!still) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-})();
+}
+orbit("stage","ring",["Curcuma","Acide kojique","Teint uniforme","Éclat naturel","Visage & corps"],1);
+orbit("stage2","ring2",["Faire mousser","Masser 1 min","Rincer","Masque hydratant","Écran solaire"],-1);
 </script>
 
 </body>
