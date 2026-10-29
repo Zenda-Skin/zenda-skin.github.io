@@ -517,6 +517,8 @@ const CONFIG = {
   kkiapayPublicKey: "",
   kkiapaySandbox: true,           // true = mode test, false = vrais paiements
   // Frais de livraison en F CFA. null = "à confirmer sur WhatsApp".
+  // Clé Web3Forms : chaque commande validée est aussi envoyée par e-mail.
+  web3formsKey: "23e8715d-a7bf-447b-8532-02cbf7de5cd9",
   fraisLivraison: null,
   livraisonOfferteSur: []         // ex. ["cure"] pour offrir la livraison sur la Cure complète
 };
@@ -622,6 +624,28 @@ function showResult(text, title){
   r.scrollIntoView({block:"nearest"});
 }
 
+/* Copie de chaque commande par e-mail (Web3Forms) */
+function emailOrder(t, txt, pay){
+  if(!CONFIG.web3formsKey) return;
+  const body = {
+    access_key: CONFIG.web3formsKey,
+    subject: `Nouvelle commande Zenda Skin – Pack ${t.p.nom} × ${state.qty}`,
+    from_name: "Site Zenda Skin",
+    Nom: $("name").value.trim(),
+    Telephone: $("phone").value.trim(),
+    Ville: $("city").value,
+    Adresse: $("area").value.trim(),
+    Pack: `${t.p.nom} × ${state.qty}`,
+    Total_produits: fmt(t.sous),
+    Paiement: pay,
+    message: txt,
+    botcheck: ""
+  };
+  try{
+    fetch("https://api.web3forms.com/submit", {method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body: JSON.stringify(body), keepalive:true}).catch(()=>{});
+  }catch(_){}
+}
+
 $("orderForm").addEventListener("submit", async e => {
   e.preventDefault();
   const err = $("err"); err.textContent = "";
@@ -636,7 +660,8 @@ $("orderForm").addEventListener("submit", async e => {
       await loadKkiapay();
       window.addSuccessListener(resp => {
         const id = resp && (resp.transactionId || resp.transaction_id || resp.id) || "";
-        showResult(orderText(t, `Mobile Money payé (${fmt(t.sous)}${id?" · réf. "+id:""})`), "Paiement reçu. Merci !");
+        const txt = orderText(t, `Mobile Money payé (${fmt(t.sous)}${id?" · réf. "+id:""})`);
+        emailOrder(t, txt, "Mobile Money"); showResult(txt, "Paiement reçu. Merci !");
       });
       window.addFailedListener(() => { err.textContent = "Le paiement n’a pas abouti. Réessayez ou choisissez le paiement à la livraison."; });
       window.openKkiapayWidget({ amount: String(t.sous), key: CONFIG.kkiapayPublicKey, sandbox: CONFIG.kkiapaySandbox,
@@ -646,7 +671,9 @@ $("orderForm").addEventListener("submit", async e => {
     }
     return;
   }
-  showResult(orderText(t), "Votre commande est prête");
+  const txt = orderText(t);
+  emailOrder(t, txt, "À la livraison");
+  showResult(txt, "Votre commande est prête");
 });
 
 /* Son des vidéos */
