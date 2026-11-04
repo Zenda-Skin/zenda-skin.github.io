@@ -519,6 +519,8 @@ const CONFIG = {
   // Frais de livraison en F CFA. null = "à confirmer sur WhatsApp".
   // Clé Web3Forms : chaque commande validée est aussi envoyée par e-mail.
   web3formsKey: "23e8715d-a7bf-447b-8532-02cbf7de5cd9",
+  // Pixel Meta (Gestionnaire d'événements Facebook)
+  metaPixelId: "1690358779153379",
   fraisLivraison: null,
   livraisonOfferteSur: []         // ex. ["cure"] pour offrir la livraison sur la Cure complète
 };
@@ -534,6 +536,21 @@ const PACKS = [
 
 const fmt = n => n.toLocaleString("fr-FR").replace(/ | /g," ") + " F";
 const $ = id => document.getElementById(id);
+
+/* Pixel Meta : mesure des visites, choix de pack, commandes et clics WhatsApp */
+(function(){
+  if(!CONFIG.metaPixelId) return;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', CONFIG.metaPixelId);
+  fbq('track', 'PageView');
+})();
+function track(ev, data){ try{ if(window.fbq) fbq('track', ev, data||{}); }catch(_){} }
+document.addEventListener("click", e => {
+  const a = e.target.closest('a[href*="wa.me/"]');
+  if(a) track("Contact", {content_name: "WhatsApp"});
+});
 let state = { pack:"decouverte", qty:1 };
 
 /* Packs */
@@ -554,6 +571,7 @@ $("deliveryNote").textContent = CONFIG.fraisLivraison===null
 
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-pick]"); if(!b) return;
+  { const pk = PACKS.find(x=>x.id===b.dataset.pick); if(pk) track("AddToCart", {content_name: "Pack "+pk.nom, value: pk.prix, currency: "XOF"}); }
   state.pack = b.dataset.pick; $("pk-"+state.pack).checked = true; render();
   $("commande").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
 });
@@ -661,7 +679,8 @@ $("orderForm").addEventListener("submit", async e => {
       window.addSuccessListener(resp => {
         const id = resp && (resp.transactionId || resp.transaction_id || resp.id) || "";
         const txt = orderText(t, `Mobile Money payé (${fmt(t.sous)}${id?" · réf. "+id:""})`);
-        emailOrder(t, txt, "Mobile Money"); showResult(txt, "Paiement reçu. Merci !");
+        emailOrder(t, txt, "Mobile Money"); track("Purchase", {content_name: "Pack "+t.p.nom, value: t.sous, currency: "XOF", num_items: state.qty});
+        showResult(txt, "Paiement reçu. Merci !");
       });
       window.addFailedListener(() => { err.textContent = "Le paiement n’a pas abouti. Réessayez ou choisissez le paiement à la livraison."; });
       window.openKkiapayWidget({ amount: String(t.sous), key: CONFIG.kkiapayPublicKey, sandbox: CONFIG.kkiapaySandbox,
@@ -672,6 +691,7 @@ $("orderForm").addEventListener("submit", async e => {
     return;
   }
   const txt = orderText(t);
+  track("Lead", {content_name: "Pack "+t.p.nom, value: t.sous, currency: "XOF", num_items: state.qty});
   emailOrder(t, txt, "À la livraison");
   showResult(txt, "Votre commande est prête");
 });
@@ -724,5 +744,6 @@ orbit("stage","ring",["Curcuma","Acide kojique","Teint uniforme","Éclat naturel
 orbit("stage2","ring2",["Faire mousser","Masser 1 min","Rincer","Masque hydratant","Écran solaire"],-1);
 </script>
 
+<noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=1690358779153379&ev=PageView&noscript=1"></noscript>
 </body>
 </html>
