@@ -237,6 +237,39 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;
 .wa-float svg{width:28px;height:28px}
 @media (max-width:860px){.wa-float{bottom:calc(84px + env(safe-area-inset-bottom,0px))}.how{grid-template-columns:1fr}.shop .wrap{grid-template-columns:1fr}.clients{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:560px){.wa-grid{grid-template-columns:1fr}}
+/* Unslop : fond sobre, une seule couleur d'accent, pas de halos ni d'animations décoratives */
+:root{--bg:#F7F2EA;--bg-2:#EFE7DB;--card:#FFFFFF;--line:#E2D6C4;--r:14px}
+body{background:var(--bg)}
+.eyebrow,.ben .tag,.badge,.brand span{text-transform:none;letter-spacing:0;font-size:.85rem}
+.brand span{font-size:.7rem;letter-spacing:.08em}
+.btn{transition:background-color .15s ease}
+.btn:hover{transform:none}
+.btn-gold{background:var(--ink);color:#FBF5EC;box-shadow:none}
+.btn-gold:hover{background:var(--terra)}
+.btn-line{border-width:1px}
+.stage{background:var(--bg-2);border-radius:var(--r)}
+.stage::before,.ring,.pill{display:none!important}
+.phone,.phone-b{animation:none!important;transform:translate(-50%,-50%)!important;background:#1C110A;box-shadow:0 20px 40px -24px rgba(28,17,10,.45);border-radius:30px;padding:6px}
+.phone video{border-radius:25px}
+.hero-facts span::before{background:var(--terra)}
+.pack,.faq-item,.choice label,.pay label,.field input,.field select,.field textarea{border-width:1px}
+.pack.feat{box-shadow:none;border-color:var(--ink)}
+.badge{background:var(--ink);color:#FBF5EC;font-size:.75rem}
+.pack li::before{background-color:transparent;border:1px solid var(--terra)}
+.steps li::before{border-radius:12px;background:var(--ink);color:#FBF5EC;height:52px}
+.trust{background:var(--ink)}
+.trust-track{animation:none;flex-wrap:wrap;width:auto;justify-content:center;gap:8px 28px;padding-inline:16px}
+.trust-track .dup{display:none}
+.trust-track span{gap:28px}
+.trust-track span::after{content:"·";font-size:1rem;color:var(--on-terra)}
+.final{background:var(--ink);color:#FBF5EC}
+.faq-item summary::after{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.wa-card img{box-shadow:none}
+.zones li{border-left-color:var(--terra)}
+.summary,.form,form,.ben,.how li,.rev{border:1px solid var(--line)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#17110D;--bg-2:#201812;--card:#241B15;--line:#3A2C22}
+:root:not([data-theme="light"]) .btn-gold,:root:not([data-theme="light"]) .badge,:root:not([data-theme="light"]) .steps li::before{background:#F4E9DA;color:#17110D}
+:root:not([data-theme="light"]) .trust,:root:not([data-theme="light"]) .final{background:#0F0B08}}
 </style>
 </head>
 <body>
